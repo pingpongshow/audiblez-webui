@@ -1,0 +1,48 @@
+services:
+  audiblez:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: audiblez:latest
+    container_name: audiblez
+    stdin_open: true
+    tty: true
+    volumes:
+      - /mnt/data/Books:/ebooks
+      - /mnt/data/Audiobooks:/audiobooks
+      - ./data:/app/data
+    working_dir: /app
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
+
+  audiblez-web:
+    build:
+      context: ./web-gui
+      dockerfile: Dockerfile
+    image: audiblez-web:latest
+    container_name: audiblez-web
+    ports:
+      - "5111:5000"
+    volumes:
+      # Share the same ebook and audiobook directories
+      - /mnt/data/Books:/ebooks
+      - /mnt/data/Audiobooks:/audiobooks
+      # Persistent uploads directory
+      - /mnt/data/TempDownloads/AudioBookConv:/tmp/uploads
+    restart: unless-stopped
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
+    environment:
+      - FLASK_ENV=production
+      - AUDIOBOOK_FOLDER=/audiobooks
+      - AUTO_CLEANUP=true

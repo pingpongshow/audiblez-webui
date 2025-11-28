@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Audiblez - Ebook to Audiobook Converter</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🎧 Audiblez Web GUI</h1>
+            <p>Convert your ebooks to audiobooks with high-quality AI voices</p>
+        </header>
+
+        <div class="main-content">
+            <!-- Tab Navigation -->
+            <div class="tabs">
+                <button class="tab-button active" data-tab="convert">Convert</button>
+                <button class="tab-button" data-tab="jobs">Jobs</button>
+                <button class="tab-button" data-tab="settings">Settings</button>
+            </div>
+
+            <!-- Convert Tab -->
+            <div class="tab-content active" id="convert-tab">
+                <div class="card">
+                    <h2>Select Ebook</h2>
+                    
+                    <!-- File Source Selection -->
+                    <div class="source-selector">
+                        <label>
+                            <input type="radio" name="source" value="upload" checked>
+                            Upload new file
+                        </label>
+                        <label>
+                            <input type="radio" name="source" value="library">
+                            Select from library
+                        </label>
+                    </div>
+
+                    <!-- Upload Section -->
+                    <div class="upload-section" id="upload-section">
+                        <div class="upload-area" id="upload-area">
+                            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                                <polyline points="17 8 12 3 7 8"></polyline>
+                                <line x1="12" y1="3" x2="12" y2="15"></line>
+                            </svg>
+                            <p>Drag & drop your .epub file here or click to browse</p>
+                            <input type="file" id="file-input" accept=".epub" hidden>
+                        </div>
+                        <div class="selected-file" id="selected-file" style="display: none;">
+                            <span id="file-name"></span>
+                            <button class="btn-small" id="clear-file">×</button>
+                        </div>
+                    </div>
+
+                    <!-- Library Section -->
+                    <div class="library-section" id="library-section" style="display: none;">
+                        <div class="search-box">
+                            <input type="text" id="library-search" placeholder="Search ebooks...">
+                        </div>
+                        <div class="library-list" id="library-list">
+                            <div class="loading">Loading library...</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Conversion Settings -->
+                <div class="card">
+                    <h2>Conversion Settings</h2>
+                    
+                    <div class="form-group">
+                        <label for="voice-select">Voice</label>
+                        <select id="voice-select" class="form-control">
+                            <option value="">Loading voices...</option>
+                        </select>
+                        <small class="help-text">Choose the narrator voice for your audiobook</small>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="speed-input">
+                            Speed: <span id="speed-value">1.0</span>x
+                        </label>
+                        <input type="range" id="speed-input" min="0.5" max="2.0" step="0.1" value="1.0" class="slider">
+                        <div class="slider-labels">
+                            <span>0.5x (Slower)</span>
+                            <span>2.0x (Faster)</span>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label>
+                            <input type="checkbox" id="cuda-checkbox">
+                            Use GPU (CUDA) for faster processing
+                        </label>
+                        <small class="help-text">Enable if you have a compatible NVIDIA GPU</small>
+                    </div>
+
+                    <div class="form-group">
+                        <label>
+                            <input type="checkbox" id="compress-checkbox" checked>
+                            Compress audiobook after conversion (64 kbps)
+                        </label>
+                        <small class="help-text">Reduces file size by ~50% with excellent voice quality</small>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="output-folder">Output Folder</label>
+                        <input type="text" id="output-folder" class="form-control" value="/audiobooks" readonly>
+                        <small class="help-text">Audiobooks will be saved to this directory</small>
+                    </div>
+
+                    <button class="btn btn-primary" id="convert-btn" disabled>
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                            <polygon points="5 3 19 12 5 21 5 3"></polygon>
+                        </svg>
+                        Start Conversion
+                    </button>
+                </div>
+            </div>
+
+            <!-- Jobs Tab -->
+            <div class="tab-content" id="jobs-tab">
+                <div class="card">
+                    <div class="jobs-header">
+                        <h2>Conversion Jobs</h2>
+                        <button class="btn btn-small" id="refresh-jobs">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                <polyline points="23 4 23 10 17 10"></polyline>
+                                <polyline points="1 20 1 14 7 14"></polyline>
+                                <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
+                            </svg>
+                            Refresh
+                        </button>
+                    </div>
+                    <div id="jobs-list">
+                        <div class="empty-state">No conversion jobs yet</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Settings Tab -->
+            <div class="tab-content" id="settings-tab">
+                <div class="card">
+                    <h2>Application Settings</h2>
+                    
+                    <div class="settings-section">
+                        <h3>Directories</h3>
+                        <div class="setting-item">
+                            <label>Ebook Library Path</label>
+                            <input type="text" class="form-control" value="/ebooks" readonly>
+                            <small class="help-text">Location where your epub files are stored</small>
+                        </div>
+                        <div class="setting-item">
+                            <label>Audiobook Output Path</label>
+                            <input type="text" class="form-control" value="/audiobooks" readonly>
+                            <small class="help-text">Location where converted audiobooks are saved</small>
+                        </div>
+                    </div>
+
+                    <div class="settings-section">
+                        <h3>Default Conversion Settings</h3>
+                        <div class="setting-item">
+                            <label>Default Voice</label>
+                            <select id="default-voice" class="form-control">
+                                <!-- Populated by JS -->
+                            </select>
+                        </div>
+                        <div class="setting-item">
+                            <label>Default Speed</label>
+                            <input type="number" id="default-speed" class="form-control" value="1.0" min="0.5" max="2.0" step="0.1">
+                        </div>
+                        <div class="setting-item">
+                            <label>
+                                <input type="checkbox" id="default-cuda">
+                                Enable CUDA by default
+                            </label>
+                        </div>
+                        <div class="setting-item">
+                            <label>
+                                <input type="checkbox" id="default-compress" checked>
+                                Enable compression by default
+                            </label>
+                            <small class="help-text">Automatically compress audiobooks to 64 kbps after conversion</small>
+                        </div>
+                    </div>
+
+                    <div class="settings-section">
+                        <h3>File Cleanup</h3>
+                        <div class="setting-item">
+                            <label>
+                                <input type="checkbox" id="auto-cleanup" checked>
+                                Automatically clean up temporary files after conversion
+                            </label>
+                            <small class="help-text">Removes .wav, .txt, and other temporary files, keeping only .m4b audiobooks</small>
+                        </div>
+                        <div class="setting-item">
+                            <div id="cleanup-status" style="padding: 12px; background: var(--bg-secondary); border-radius: var(--border-radius); margin-top: 12px;">
+                                <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+                                    <strong>Storage Status</strong>
+                                    <button class="btn btn-small" id="refresh-cleanup-status">Refresh</button>
+                                </div>
+                                <div id="cleanup-stats">Loading...</div>
+                            </div>
+                        </div>
+                        <div class="setting-item">
+                            <button class="btn btn-danger" id="cleanup-all-btn">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                    <polyline points="3 6 5 6 21 6"></polyline>
+                                    <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                                </svg>
+                                Clean Up All Temporary Files
+                            </button>
+                            <small class="help-text">Manually remove all non-.m4b files from the audiobook directory</small>
+                        </div>
+                    </div>
+
+                    <div class="settings-section">
+                        <h3>About</h3>
+                        <div class="about-info">
+                            <p><strong>Audiblez Web GUI</strong></p>
+                            <p>A web interface for the Audiblez ebook to audiobook converter</p>
+                            <p>Powered by Kokoro-82M AI speech synthesis</p>
+                            <p><a href="https://github.com/santinic/audiblez" target="_blank">GitHub Repository</a></p>
+                        </div>
+                    </div>
+
+                    <button class="btn btn-primary" id="save-settings">Save Settings</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Notification -->
+    <div class="toast" id="toast"></div>
+
+    <script src="{{ url_for('static', filename='js/app.js') }}"></script>
+</body>
+</html>
